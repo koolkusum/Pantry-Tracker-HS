@@ -2,8 +2,8 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { firestore } from "@/firebase";
-import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
-import { Container, TextField, Button, List, ListItem, ListItemText, IconButton } from "@mui/material";
+import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { Container, TextField, Button, List, ListItem, ListItemText, IconButton, Typography, Paper, Box } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
@@ -40,12 +40,12 @@ export default function Home() {
 
   const addItem = async () => {
     if (firestore) {
-      const newItem = { name: itemName, count: itemCount };
+      const newItem = { name: itemName, count: itemCount, updatedAt: serverTimestamp() };
       if (updateId) {
         // Update existing item
         const itemDoc = doc(firestore, "inventory", updateId);
         await updateDoc(itemDoc, newItem);
-        setPantryItems(pantryItems.map(item => item.name === updateId ? { id: updateId, ...newItem } : item));
+        setPantryItems(pantryItems.map(item => item.id === updateId ? { id: updateId, ...newItem } : item));
         setUpdateId(null);
       } else {
         // Add new item
@@ -67,7 +67,7 @@ export default function Home() {
   const updateItemCount = async (id, newCount) => {
     if (firestore) {
       const itemDoc = doc(firestore, "inventory", id);
-      await updateDoc(itemDoc, { count: newCount });
+      await updateDoc(itemDoc, { count: newCount, updatedAt: serverTimestamp() });
       setPantryItems(pantryItems.map(item => item.id === id ? { ...item, count: newCount } : item));
     }
   };
@@ -76,37 +76,47 @@ export default function Home() {
     <ThemeProvider theme={theme}>
       <main>
         <Container>
-          <h1>Pantry Tracker</h1>
-          <TextField
-            label="Item Name"
-            value={itemName}
-            onChange={(e) => setItemName(e.target.value)}
-            sx={{ input: { color: 'white' }, label: { color: 'white' } }}
-          />
-          <TextField
-            label="Count"
-            type="number"
-            value={itemCount}
-            onChange={(e) => setItemCount(e.target.value)}
-            sx={{ input: { color: 'white' }, label: { color: 'white' } }}
-          />
-          <Button variant="contained" color="primary" onClick={addItem}>
-            {updateId ? "Update Item" : "Add Item"}
-          </Button>
+          <Typography variant="h4" sx={{ color: 'white', mb: 2 }}>Pantry Tracker</Typography>
+          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+            <TextField
+              label="Item Name"
+              value={itemName}
+              onChange={(e) => setItemName(e.target.value)}
+              sx={{ input: { color: 'white' }, label: { color: 'white' } }}
+            />
+            <TextField
+              label="Count"
+              type="number"
+              value={itemCount}
+              onChange={(e) => setItemCount(e.target.value)}
+              sx={{ input: { color: 'white' }, label: { color: 'white' } }}
+            />
+            <Button variant="contained" color="primary" onClick={addItem}>
+              {updateId ? "Update Item" : "Add Item"}
+            </Button>
+          </Box>
           <List>
             {pantryItems.map((item) => (
-              <ListItem key={item.id}>
-                <ListItemText primary={`${item.name} - ${item.count}`} sx={{ color: 'white' }} />
-                <IconButton aria-label="increase" onClick={() => updateItemCount(item.id, item.count + 1)} sx={{ color: 'white' }}>
-                  <AddIcon />
-                </IconButton>
-                <IconButton aria-label="decrease" onClick={() => updateItemCount(item.id, item.count - 1)} sx={{ color: 'white' }}>
-                  <RemoveIcon />
-                </IconButton>
-                <IconButton edge="end" aria-label="delete" onClick={() => removeItem(item.id)} sx={{ color: 'white' }}>
-                  <DeleteIcon />
-                </IconButton>
-              </ListItem>
+              <Paper key={item.id} sx={{ mb: 2, p: 2, backgroundColor: '#333', color: 'white' }}>
+                <ListItem>
+                  <ListItemText 
+                    primary={`${item.name} - ${item.count}`}
+                    secondary={item.updatedAt && item.updatedAt.toDate ? item.updatedAt.toDate().toLocaleString() : "Unknown"}
+                    sx={{ color: 'white' }}
+                  />
+                  <Box>
+                    <IconButton aria-label="increase" onClick={() => updateItemCount(item.id, item.count + 1)} sx={{ color: 'white' }}>
+                      <AddIcon />
+                    </IconButton>
+                    <IconButton aria-label="decrease" onClick={() => updateItemCount(item.id, item.count - 1)} sx={{ color: 'white' }}>
+                      <RemoveIcon />
+                    </IconButton>
+                    <IconButton edge="end" aria-label="delete" onClick={() => removeItem(item.id)} sx={{ color: 'white' }}>
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
+                </ListItem>
+              </Paper>
             ))}
           </List>
         </Container>
