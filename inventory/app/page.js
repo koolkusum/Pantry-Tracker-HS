@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { firestore } from "@/firebase";
 import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { Container, TextField, Button, List, ListItem, ListItemText, IconButton, Typography, Paper, Box } from "@mui/material";
+import { Container, TextField, Button, List, ListItem, ListItemText, IconButton, Typography, Paper, Box, MenuItem, Select, InputLabel, FormControl } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
@@ -25,6 +25,7 @@ export default function Home() {
   const [filteredItems, setFilteredItems] = useState([]);
   const [itemName, setItemName] = useState("");
   const [itemCount, setItemCount] = useState(1);
+  const [itemCategory, setItemCategory] = useState(""); // New state for category
   const [updateId, setUpdateId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -53,7 +54,7 @@ export default function Home() {
 
   const addItem = async () => {
     if (firestore) {
-      const newItem = { name: itemName, count: itemCount, updatedAt: serverTimestamp() };
+      const newItem = { name: itemName, count: itemCount, category: itemCategory, updatedAt: serverTimestamp() };
       if (updateId) {
         // Update existing item
         const itemDoc = doc(firestore, "inventory", updateId);
@@ -68,6 +69,7 @@ export default function Home() {
       }
       setItemName("");
       setItemCount(1);
+      setItemCategory(""); // Clear category selection
     }
   };
 
@@ -101,25 +103,46 @@ export default function Home() {
       <main>
         <Container>
           <Typography variant="h4" sx={{ color: 'white', mb: 2 }}>Pantry Tracker</Typography>
-          <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-            <TextField
-              label="Item Name"
-              value={itemName}
-              onChange={(e) => setItemName(e.target.value)}
-              sx={{ input: { color: 'white' }, label: { color: 'white' } }}
-            />
-            <TextField
-              label="Count"
-              type="number"
-              value={itemCount}
-              onChange={(e) => setItemCount(e.target.value)}
-              sx={{ input: { color: 'white' }, label: { color: 'white' } }}
-            />
-            <Button variant="contained" color="primary" onClick={addItem}>
-              {updateId ? "Update Item" : "Add Item"}
-            </Button>
-          </Box>
-          <Box sx={{ mb: 2 }}>
+          <Box sx={{ mb: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                label="Item Name"
+                value={itemName}
+                onChange={(e) => setItemName(e.target.value)}
+                sx={{ input: { color: 'white' }, label: { color: 'white' }, flex: 1 }}
+              />
+              <TextField
+                label="Count"
+                type="number"
+                value={itemCount}
+                onChange={(e) => setItemCount(e.target.value)}
+                sx={{ input: { color: 'white' }, label: { color: 'white' }, flex: 1 }}
+              />
+              <FormControl sx={{ flex: 1 }}>
+                <InputLabel sx={{ color: 'white' }}>Category</InputLabel>
+                <Select
+                  value={itemCategory}
+                  onChange={(e) => setItemCategory(e.target.value)}
+                  sx={{ color: 'white' }}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: { backgroundColor: '#333', color: 'white' }
+                    }
+                  }}
+                >
+                  <MenuItem value=""><em>None</em></MenuItem>
+                  <MenuItem value="Fruits">Fruits</MenuItem>
+                  <MenuItem value="Vegetables">Vegetables</MenuItem>
+                  <MenuItem value="Dairy">Dairy</MenuItem>
+                  <MenuItem value="Grains">Grains</MenuItem>
+                  <MenuItem value="Meat">Meat</MenuItem>
+                  <MenuItem value="Other">Other</MenuItem>
+                </Select>
+              </FormControl>
+              <Button variant="contained" color="primary" onClick={addItem}>
+                {updateId ? "Update Item" : "Add Item"}
+              </Button>
+            </Box>
             <TextField
               label="Search Items"
               value={searchQuery}
@@ -133,7 +156,7 @@ export default function Home() {
                 <ListItem>
                   <ListItemText 
                     primary={`${item.name} - ${item.count}`}
-                    secondary={formatDate(item.updatedAt)}
+                    secondary={`Category: ${item.category} | Last Updated: ${formatDate(item.updatedAt)}`}
                     sx={{ color: 'white' }}
                   />
                   <Box>
