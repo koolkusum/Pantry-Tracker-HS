@@ -1,5 +1,4 @@
 'use client';
-import Image from "next/image";
 import { useState, useEffect } from "react";
 import { firestore } from "@/firebase";
 import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc, serverTimestamp } from "firebase/firestore";
@@ -33,7 +32,10 @@ export default function Home() {
     const fetchItems = async () => {
       if (firestore) {
         const querySnapshot = await getDocs(collection(firestore, "inventory"));
-        const items = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const items = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          return { id: doc.id, ...data, updatedAt: data.updatedAt?.toDate() }; // Convert timestamp to Date
+        });
         setPantryItems(items);
         setFilteredItems(items);
       }
@@ -56,12 +58,13 @@ export default function Home() {
         // Update existing item
         const itemDoc = doc(firestore, "inventory", updateId);
         await updateDoc(itemDoc, newItem);
-        setPantryItems(pantryItems.map(item => item.id === updateId ? { id: updateId, ...newItem } : item));
+        // Update local state with new timestamp
+        setPantryItems(pantryItems.map(item => item.id === updateId ? { id: updateId, ...newItem, updatedAt: new Date() } : item));
         setUpdateId(null);
       } else {
         // Add new item
         const docRef = await addDoc(collection(firestore, "inventory"), newItem);
-        setPantryItems([...pantryItems, { id: docRef.id, ...newItem }]);
+        setPantryItems([...pantryItems, { id: docRef.id, ...newItem, updatedAt: new Date() }]);
       }
       setItemName("");
       setItemCount(1);
@@ -80,6 +83,16 @@ export default function Home() {
       const itemDoc = doc(firestore, "inventory", id);
       await updateDoc(itemDoc, { count: newCount, updatedAt: serverTimestamp() });
       setPantryItems(pantryItems.map(item => item.id === id ? { ...item, count: newCount, updatedAt: new Date() } : item));
+    }
+  };
+
+  // Function to format the timestamp or date
+  const formatDate = (date) => {
+    if (!date) return '';
+    if (date instanceof Date) {
+      return date.toLocaleString(); // JavaScript Date
+    } else {
+      return ''; // Invalid date
     }
   };
 
@@ -120,7 +133,7 @@ export default function Home() {
                 <ListItem>
                   <ListItemText 
                     primary={`${item.name} - ${item.count}`}
-                    secondary={item.updatedAt?.toDate().toLocaleString()}
+                    secondary={formatDate(item.updatedAt)}
                     sx={{ color: 'white' }}
                   />
                   <Box>
