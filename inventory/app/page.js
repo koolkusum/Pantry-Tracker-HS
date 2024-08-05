@@ -89,9 +89,10 @@ export default function Home() {
 
   const updateItemCount = async (id, newCount) => {
     if (firestore) {
+      // Ensure newCount is a number
       const itemDoc = doc(firestore, "inventory", id);
-      await updateDoc(itemDoc, { count: newCount, updatedAt: serverTimestamp() });
-      setPantryItems(pantryItems.map(item => item.id === id ? { ...item, count: newCount, updatedAt: new Date() } : item));
+      await updateDoc(itemDoc, { count: Number(newCount), updatedAt: serverTimestamp() });
+      setPantryItems(pantryItems.map(item => item.id === id ? { ...item, count: Number(newCount), updatedAt: new Date() } : item));
     }
   };
 
@@ -117,12 +118,12 @@ export default function Home() {
                 value={itemName}
                 onChange={(e) => setItemName(e.target.value)}
                 sx={{ input: { color: 'white' }, label: { color: 'white' }, flex: 1, border: '1px solid white' }}
-              />
+                            />
               <TextField
                 label="Count"
                 type="number"
                 value={itemCount}
-                onChange={(e) => setItemCount(e.target.value)}
+                onChange={(e) => setItemCount(Number(e.target.value))} // Convert to number
                 sx={{ input: { color: 'white' }, label: { color: 'white' }, flex: 1, border: '1px solid white' }}
               />
               <FormControl sx={{ flex: 1 }}>
