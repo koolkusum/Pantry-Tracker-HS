@@ -28,6 +28,7 @@ export default function Home() {
   const [itemCategory, setItemCategory] = useState(""); // New state for category
   const [updateId, setUpdateId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortCategory, setSortCategory] = useState(""); // State for sorting by category
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -46,11 +47,17 @@ export default function Home() {
 
   useEffect(() => {
     // Filter items based on search query
-    const results = pantryItems.filter(item =>
+    let results = pantryItems.filter(item =>
       item.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
+    
+    // Sort items based on selected category if sortCategory is set
+    if (sortCategory) {
+      results = results.filter(item => item.category === sortCategory);
+    }
+  
     setFilteredItems(results);
-  }, [searchQuery, pantryItems]);
+  }, [searchQuery, pantryItems, sortCategory]);
 
   const addItem = async () => {
     if (firestore) {
@@ -109,21 +116,21 @@ export default function Home() {
                 label="Item Name"
                 value={itemName}
                 onChange={(e) => setItemName(e.target.value)}
-                sx={{ input: { color: 'white' }, label: { color: 'white' }, flex: 1 }}
+                sx={{ input: { color: 'white' }, label: { color: 'white' }, flex: 1, border: '1px solid white' }}
               />
               <TextField
                 label="Count"
                 type="number"
                 value={itemCount}
                 onChange={(e) => setItemCount(e.target.value)}
-                sx={{ input: { color: 'white' }, label: { color: 'white' }, flex: 1 }}
+                sx={{ input: { color: 'white' }, label: { color: 'white' }, flex: 1, border: '1px solid white' }}
               />
               <FormControl sx={{ flex: 1 }}>
                 <InputLabel sx={{ color: 'white' }}>Category</InputLabel>
                 <Select
                   value={itemCategory}
                   onChange={(e) => setItemCategory(e.target.value)}
-                  sx={{ color: 'white' }}
+                  sx={{ color: 'white', border: '1px solid white' }}
                   MenuProps={{
                     PaperProps: {
                       sx: { backgroundColor: '#333', color: 'white' }
@@ -147,8 +154,29 @@ export default function Home() {
               label="Search Items"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              sx={{ input: { color: 'white' }, label: { color: 'white' } }}
+              sx={{ input: { color: 'white' }, label: { color: 'white' }, border: '1px solid white' }}
             />
+            <FormControl sx={{ mb: 2, display: 'flex', flexDirection: 'row', gap: 2 }}>
+              <InputLabel sx={{ color: 'white' }}>Sort by Category</InputLabel>
+              <Select
+                value={sortCategory}
+                onChange={(e) => setSortCategory(e.target.value)}
+                sx={{ color: 'white', border: '1px solid white' }}
+                MenuProps={{
+                  PaperProps: {
+                    sx: { backgroundColor: '#333', color: 'white' }
+                  }
+                }}
+              >
+                <MenuItem value=""><em>None</em></MenuItem>
+                <MenuItem value="Fruits">Fruits</MenuItem>
+                <MenuItem value="Vegetables">Vegetables</MenuItem>
+                <MenuItem value="Dairy">Dairy</MenuItem>
+                <MenuItem value="Grains">Grains</MenuItem>
+                <MenuItem value="Meat">Meat</MenuItem>
+                <MenuItem value="Other">Other</MenuItem>
+              </Select>
+            </FormControl>
           </Box>
           <List>
             {filteredItems.map((item) => (
