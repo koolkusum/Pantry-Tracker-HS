@@ -23,9 +23,11 @@ const theme = createTheme({
 
 export default function Home() {
   const [pantryItems, setPantryItems] = useState([]);
+  const [filteredItems, setFilteredItems] = useState([]);
   const [itemName, setItemName] = useState("");
   const [itemCount, setItemCount] = useState(1);
   const [updateId, setUpdateId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     const fetchItems = async () => {
@@ -33,10 +35,19 @@ export default function Home() {
         const querySnapshot = await getDocs(collection(firestore, "inventory"));
         const items = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setPantryItems(items);
+        setFilteredItems(items);
       }
     };
     fetchItems();
   }, []);
+
+  useEffect(() => {
+    // Filter items based on search query
+    const results = pantryItems.filter(item =>
+      item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    setFilteredItems(results);
+  }, [searchQuery, pantryItems]);
 
   const addItem = async () => {
     if (firestore) {
@@ -68,7 +79,7 @@ export default function Home() {
     if (firestore) {
       const itemDoc = doc(firestore, "inventory", id);
       await updateDoc(itemDoc, { count: newCount, updatedAt: serverTimestamp() });
-      setPantryItems(pantryItems.map(item => item.id === id ? { ...item, count: newCount } : item));
+      setPantryItems(pantryItems.map(item => item.id === id ? { ...item, count: newCount, updatedAt: new Date() } : item));
     }
   };
 
@@ -95,13 +106,21 @@ export default function Home() {
               {updateId ? "Update Item" : "Add Item"}
             </Button>
           </Box>
+          <Box sx={{ mb: 2 }}>
+            <TextField
+              label="Search Items"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              sx={{ input: { color: 'white' }, label: { color: 'white' } }}
+            />
+          </Box>
           <List>
-            {pantryItems.map((item) => (
+            {filteredItems.map((item) => (
               <Paper key={item.id} sx={{ mb: 2, p: 2, backgroundColor: '#333', color: 'white' }}>
                 <ListItem>
                   <ListItemText 
                     primary={`${item.name} - ${item.count}`}
-                    secondary={item.updatedAt && item.updatedAt.toDate ? item.updatedAt.toDate().toLocaleString() : "Unknown"}
+                    secondary={item.updatedAt?.toDate().toLocaleString()}
                     sx={{ color: 'white' }}
                   />
                   <Box>
